@@ -12,20 +12,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Main {
 
-    // URL endpointu Tatum API pro získání ceny ETH/USD
+    // Tatum API endpoint URL for getting ETH/USD price
     private static final String API_URL =
             "https://api.tatum.io/v4/data/rate/symbol?symbol=ETH&basePair=USD";
 
-    // Formát pro zobrazení času ve výstupu
+    // Format for displaying time
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public static void main(String[] args) throws Exception {
 
-        // Načtení API klíče z environment variable (bezpečně, není v kódu)
+        // Retrieve API key from environment variable
         String apiKey = System.getenv("TATUM_API_KEY");
 
-        // Kontrola, že API klíč existuje
+        // Checking that the API key exists
         if (apiKey == null || apiKey.isBlank()) {
             System.out.println("ERROR: Missing TATUM_API_KEY environment variable.");
             System.out.println("Set it in PowerShell:");
@@ -33,16 +33,16 @@ public class Main {
             return;
         }
 
-        // Interval mezi měřeními v sekundách
+        // Interval between measurements in seconds
         int intervalSeconds = 30;
 
-        // Hlavička programu
+        // Program header
         System.out.println("========================================");
         System.out.println("   ETH/USD Price Tracker (Tatum API)   ");
         System.out.println("========================================");
         System.out.println();
 
-        // První měření ceny
+        // First price measurement
         double price1 = fetchPrice(apiKey);
         String time1 = now();
 
@@ -50,13 +50,13 @@ public class Main {
         System.out.printf("ETH/USD price:     %.4f%n", price1);
         System.out.println();
 
-        // Pauza mezi měřeními
+        // Pause between measurements
         System.out.printf("Waiting %d seconds before next measurement...%n", intervalSeconds);
         System.out.println();
 
         Thread.sleep(intervalSeconds * 1000);
 
-        // Druhé měření ceny
+        // Second price measurement
         double price2 = fetchPrice(apiKey);
         String time2 = now();
 
@@ -64,11 +64,11 @@ public class Main {
         System.out.printf("ETH/USD price:     %.4f%n", price2);
         System.out.println();
 
-        // Výpočet změny ceny
+        // Price change calculation
         double diff = price2 - price1;
         double pct = (diff / price1) * 100.0;
 
-        // Shrnutí výsledků
+        // Summary of results
         System.out.println("========================================");
         System.out.println("               SUMMARY                  ");
         System.out.println("========================================");
@@ -79,46 +79,46 @@ public class Main {
     }
 
     /**
-     * Metoda zavolá Tatum API a vrátí aktuální cenu ETH/USD.
+     * The method calls the Tatum API and returns the current ETH/USD price.
      */
     private static double fetchPrice(String apiKey) throws Exception {
 
-        // Vytvoření HTTP klienta
+        // Creating an HTTP client
         HttpClient client = HttpClient.newHttpClient();
 
-        // Vytvoření HTTP GET requestu s API klíčem v headeru
+        // Creating an HTTP GET request with the API key in the header
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
                 .header("x-api-key", apiKey)
                 .GET()
                 .build();
 
-        // Odeslání requestu a získání odpovědi
+        // Sending a request and getting a response
         HttpResponse<String> response =
                 client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // Kontrola HTTP statusu
+        // Checking HTTP status
         if (response.statusCode() != 200) {
             throw new RuntimeException("HTTP error: " + response.statusCode()
                     + " Body: " + response.body());
         }
 
-        // Parsování JSON odpovědi
+        // Parsing JSON response
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(response.body());
 
-        // Získání hodnoty ceny z JSON pole "value"
+        // Getting the price value from the JSON field "value"
         JsonNode valueNode = root.get("value");
         if (valueNode == null) {
             throw new RuntimeException("Unexpected response: " + response.body());
         }
 
-        // Vrácení ceny jako čísla
+        // Returning price as a number
         return valueNode.asDouble();
     }
 
     /**
-     * Pomocná metoda vrátí aktuální čas jako text.
+     * The method returns the current time as text.
      */
     private static String now() {
         return LocalDateTime.now().format(TIME_FORMAT);
